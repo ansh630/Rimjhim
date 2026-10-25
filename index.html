@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#ff758c">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>For My Dear Rimjhim ❤️ | From Anshuman</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600;700&family=Great+Vibes&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        * {
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            box-sizing: border-box;
+        }
+        html, body {
+            height: 100%;
+            width: 100vw;
+            overflow: hidden;
+            position: fixed;
+            font-family: 'Poppins', sans-serif;
+            background-color: #ff9a9e;
+        }
+        .font-cursive {
+            font-family: 'Dancing Script', cursive;
+        }
+        .font-romantic {
+            font-family: 'Great Vibes', cursive;
+        }
+        /* Gradient Romantic Background */
+        .bg-romantic-gradient {
+            background: linear-gradient(135deg, #ff758c 0%, #ff7eb3 40%, #fecfef 80%, #feada6 100%);
+        }
+        /* Mobile Screen Outer Frame styling (Android Chrome viewport) */
+        .mobile-viewport {
+            width: 100%;
+            height: 100%;
+            max-width: 440px;
+            max-height: 900px;
+            margin: auto;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            overflow: hidden;
+        }
+        /* Glassmorphism Card */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.45);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid rgba(255, 255, 255, 0.7);
+            box-shadow: 0 15px 35px rgba(220, 38, 38, 0.2);
+        }
+        .glass-card-dark {
+            background: rgba(255, 240, 245, 0.82);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.9);
+            box-shadow: 0 12px 30px rgba(255, 77, 109, 0.25);
+        }
+        /* Photo Overlay Layer */
+        .bg-photo-overlay {
+            position: absolute;
+            inset: 0;
+            background-size: cover;
+            background-position: center;
+            opacity: 0.35;
+            filter: contrast(1.1) brightness(1.05);
+            transition: opacity 1.5s ease-in-out, background-image 1.5s ease-in-out;
+            mix-blend-mode: overlay;
+        }
+        /* Heartbeat Animation */
+        @keyframes heartbeat {
+            0% { transform: scale(1); }
+            14% { transform: scale(1.12); }
+            28% { transform: scale(1); }
+            42% { transform: scale(1.12); }
+            70% { transform: scale(1); }
+        }
+        .animate-heartbeat {
+            animation: heartbeat 1.5s infinite ease-in-out;
+        }
+        @keyframes floatSlow {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-8px) rotate(2deg); }
+        }
+        .animate-float {
+            animation: floatSlow 3.5s infinite ease-in-out;
+        }
+        .page-enter {
+            animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        .page-exit {
+            animation: fadeOut 0.4s cubic-bezier(0.7, 0, 0.84, 0) forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.94) translateY(15px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        @keyframes fadeOut {
+            from { opacity: 1; transform: scale(1) translateY(0); }
+            to { opacity: 0; transform: scale(0.94) translateY(-15px); }
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(244, 63, 94, 0.5);
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="bg-romantic-gradient h-full w-full relative flex items-center justify-center overflow-hidden" onclick="triggerInitialMusicOnTap()">
+
+    <!-- Dynamic Photo Background Slideshow Overlay -->
+    <div id="photoBg" class="bg-photo-overlay z-0"></div>
+    <div class="absolute inset-0 bg-gradient-to-t from-pink-500/20 via-transparent to-rose-500/10 pointer-events-none z-0"></div>
+
+    <!-- Floating Hearts Canvas -->
+    <canvas id="bgCanvas" class="absolute inset-0 pointer-events-none z-10"></canvas>
+
+    <!-- Header Controls / Music Toggle & Upload -->
+    <div class="fixed top-3 right-3 z-50 flex items-center gap-2">
+        <!-- Photo Upload Button -->
+        <label for="photoUploadInput" class="bg-white/80 backdrop-blur-md p-2 rounded-full text-rose-600 shadow-lg hover:bg-white active:scale-90 transition-all cursor-pointer flex items-center justify-center w-10 h-10 border border-white" title="Add More Photos">
+            <i class="fas fa-camera text-base"></i>
+        </label>
+        <input type="file" id="photoUploadInput" accept="image/*" multiple class="hidden" onchange="handlePhotoUpload(event)">
+
+        <!-- Music Play/Pause Controller -->
+        <button id="musicToggle" onclick="toggleMusic(event)" class="bg-white/80 backdrop-blur-md px-3 py-2 rounded-full text-rose-600 shadow-lg hover:bg-white active:scale-90 transition-all flex items-center gap-1.5 border border-white text-xs font-semibold">
+            <i id="musicIcon" class="fas fa-music text-rose-500 text-sm"></i>
+            <span id="musicBtnText">Play Music</span>
+        </button>
+    </div>
+
+    <!-- Audio Player Element for "Ishq Wala Love" -->
+    <audio id="audioTrack" loop preload="auto">
+        <source src="https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=romantic-love-song-112199.mp3" type="audio/mpeg">
+    </audio>
+
+    <!-- Hidden YouTube Player Container (Backup for Ishq Wala Love Video ID qOTiocnriYo) -->
+    <div class="hidden">
+        <div id="youtubePlayer"></div>
+    </div>
+    <script src="https://www.youtube.com/iframe_api"></script>
+
+    <!-- MAIN PHONE VIEWPORT CONTAINER -->
+    <main class="mobile-viewport p-4 relative z-20">
+
+        <!-- Top Header Badge -->
+        <header class="w-full text-center py-2 flex items-center justify-center gap-2 z-20">
+            <span class="px-3.5 py-1 rounded-full bg-white/70 backdrop-blur-md text-xs font-bold text-rose-700 shadow-sm border border-white flex items-center gap-1.5">
+                <i class="fas fa-heart text-rose-500 text-xs animate-pulse"></i>
+                Anshuman ❤️ Rimjhim
+                <i class="fas fa-heart text-rose-500 text-xs animate-pulse"></i>
+            </span>
+        </header>
+
+        <!-- ================= PAGE 1: I LOVE YOU & APOLOGY ================= -->
+        <section id="page1" class="glass-card w-full h-[84vh] max-h-[720px] rounded-3xl p-5 flex flex-col justify-between items-center text-center relative overflow-hidden page-enter shadow-2xl my-auto">
+            
+            <!-- Top Subtitle -->
+            <div class="flex items-center gap-1.5 text-rose-600 font-semibold tracking-wider text-[11px] uppercase">
+                <i class="fas fa-sparkles text-amber-500"></i>
+                <span>A Romantic Message From Anshuman</span>
+                <i class="fas fa-sparkles text-amber-500"></i>
+            </div>
+
+            <!-- Content Area -->
+            <div class="my-auto flex flex-col items-center w-full px-1">
+                
+                <!-- Couple Visual Portrait Frame -->
+                <div class="relative my-2">
+                    <div class="absolute inset-0 rounded-full bg-pink-400 blur-xl opacity-60 animate-pulse"></div>
+                    <div id="photoFrame" class="relative w-32 h-32 rounded-full border-4 border-white shadow-2xl overflow-hidden bg-gradient-to-tr from-rose-400 to-pink-300 flex items-center justify-center animate-heartbeat">
+                        <!-- Custom Vector Art representing Anshuman & Rimjhim, replaced dynamically by uploaded photos -->
+                        <div id="defaultCoupleGraphic" class="w-full h-full flex items-center justify-center bg-rose-200">
+                            <svg class="w-full h-full p-2" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="100" cy="100" r="95" fill="#FFE4E6"/>
+                                <!-- Anshuman (Left) -->
+                                <circle cx="70" cy="75" r="28" fill="#D97706"/>
+                                <path d="M70 60 C 50 60, 50 85, 70 85 C 90 85, 90 60, 70 60 Z" fill="#374151"/>
+                                <path d="M55 78 C 55 95, 85 95, 85 78 C 85 88, 55 88, 55 78 Z" fill="#1F2937"/> <!-- Beard -->
+                                <path d="M45 140 C 45 105, 95 105, 95 140 Z" fill="#991B1B"/> <!-- Red Shirt -->
+                                <!-- Rimjhim (Right) -->
+                                <circle cx="130" cy="80" r="26" fill="#FDE68A"/>
+                                <path d="M100 65 C 100 35, 160 35, 160 85 C 160 115, 100 115, 100 65 Z" fill="#111827"/> <!-- Beautiful Curly Hair -->
+                                <circle cx="130" cy="78" r="22" fill="#FBCFE8"/>
+                                <path d="M105 140 C 105 110, 155 110, 155 140 Z" fill="#111827"/> <!-- Black Top -->
+                                <!-- Heart in Between -->
+                                <path d="M100 95 C 95 90, 85 95, 95 105 L 100 110 L 105 105 C 115 95, 105 90, 100 95 Z" fill="#E11D48"/>
+                            </svg>
+                        </div>
+                        <img id="frameImage" src="" alt="Anshuman & Rimjhim" class="w-full h-full object-cover hidden">
+                    </div>
+                </div>
+
+                <!-- Main Declaration -->
+                <h1 class="font-romantic text-5xl text-rose-600 font-bold drop-shadow-sm my-1 animate-float">
+                    I Love You, Rimjhim!
+                </h1>
+
+                <!-- Music Playing Label -->
+                <div class="text-[11px] font-medium text-pink-700 bg-pink-100/90 px-3 py-0.5 rounded-full border border-pink-200 mb-2 shadow-sm">
+                    🎵 Song: <span class="font-semibold">Ishq Wala Love</span>
+                </div>
+
+                <!-- Heartfelt Apology Card -->
+                <div class="glass-card-dark rounded-2xl p-3.5 my-1 border border-white/80 shadow-inner w-full text-left">
+                    <h3 class="text-xs font-bold text-rose-700 uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                        <i class="fas fa-hand-holding-heart text-rose-500 text-sm"></i> My Apology & Promise:
+                    </h3>
+                    <div class="text-gray-800 text-xs sm:text-sm leading-relaxed max-h-36 overflow-y-auto custom-scrollbar pr-1 space-y-2">
+                        <p class="font-medium text-rose-900">
+                            "Rimjhim, I am really sorry for everything that I have done wrong with you."
+                        </p>
+                        <p>
+                            I promise you: <span class="font-semibold text-rose-700">I will always listen to you.</span> I will always be right there for you, every single time — even at <span class="font-bold text-rose-800">12 AM in the night</span>. Whatever I am doing doesn't matter.
+                        </p>
+                        <p class="font-semibold text-rose-800 italic">
+                            You are my first and last priority. You are the only one for me. I'm really sorry. ❤️
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Romantic Quotes Slider -->
+                <div class="mt-2 w-full flex flex-col items-center">
+                    <p id="quoteText" class="text-xs italic text-rose-900 font-medium px-2 min-h-[32px] flex items-center justify-center transition-opacity duration-300">
+                        "Every second with you, Rimjhim, is my favorite memory."
+                    </p>
+                    <button onclick="changeQuote(event)" class="mt-1 text-[11px] text-pink-700 hover:text-rose-900 font-semibold flex items-center gap-1 active:scale-95 transition-transform bg-white/70 px-3 py-1 rounded-full border border-pink-200 shadow-sm">
+                        <i class="fas fa-magic text-pink-500"></i> Another Love Note
+                    </button>
+                </div>
+            </div>
+
+            <!-- Page 1 Action Button -->
+            <div class="w-full pt-2 pb-1">
+                <button onclick="goToPage2()" class="w-full py-3.5 px-6 bg-gradient-to-r from-rose-500 via-pink-500 to-rose-600 text-white font-bold rounded-2xl shadow-lg shadow-rose-500/30 flex items-center justify-center gap-2 text-base transition-all transform active:scale-95 border border-white/30">
+                    <span>Click Here My Love, Rimjhim</span>
+                    <i class="fas fa-arrow-right"></i>
+                </button>
+            </div>
+        </section>
+
+
+        <!-- ================= PAGE 2: WILL YOU MARRY ME ================= -->
+        <section id="page2" class="glass-card w-full h-[84vh] max-h-[720px] rounded-3xl p-5 flex flex-col justify-between items-center text-center relative overflow-hidden hidden shadow-2xl my-auto">
+            
+            <!-- Top Tag -->
+            <div class="flex items-center gap-2 text-rose-600 font-semibold tracking-wider text-xs uppercase">
+                <i class="fas fa-crown text-amber-500"></i>
+                <span>Anshuman's Lifetime Question</span>
+                <i class="fas fa-crown text-amber-500"></i>
+            </div>
+
+            <!-- Proposal Main Card -->
+            <div class="my-auto flex flex-col items-center w-full px-2">
+                
+                <!-- Ring Animation Graphic -->
+                <div class="relative my-3">
+                    <div class="absolute inset-0 rounded-full bg-rose-400 blur-2xl opacity-60 animate-pulse"></div>
+                    <div class="relative bg-white/90 p-4 rounded-full border-2 border-rose-300 shadow-2xl animate-float">
+                        <span class="text-6xl">💍</span>
+                    </div>
+                </div>
+
+                <!-- Big Proposal Text -->
+                <h2 class="font-romantic text-5xl sm:text-6xl text-rose-600 font-bold mb-2 drop-shadow-md">
+                    Will You Marry Me, Rimjhim?
+                </h2>
+
+                <p class="text-gray-800 text-xs sm:text-sm max-w-xs leading-relaxed font-medium bg-white/70 p-3.5 rounded-2xl border border-white shadow-sm my-2">
+                    "You are my today, my tomorrow, and my entire lifetime. Will you make me the luckiest man alive and marry me?" ♾️❤️
+                </p>
+
+                <div class="text-[11px] text-rose-700 font-bold bg-rose-100/90 px-3.5 py-1 rounded-full border border-rose-200 mt-1 shadow-sm">
+                    Forever & Always Yours, ~ Anshuman
+                </div>
+            </div>
+
+            <!-- Action Area with Moving No Button -->
+            <div id="buttonArea" class="w-full pb-6 pt-2 flex flex-col gap-3 relative min-h-[140px] items-center justify-center">
+                
+                <!-- YES BUTTON -->
+                <button id="yesBtn" onclick="acceptProposal()" class="w-full py-4 bg-gradient-to-r from-rose-500 via-pink-500 to-rose-600 text-white font-extrabold text-lg rounded-2xl shadow-xl shadow-rose-500/40 transform transition-all active:scale-95 flex items-center justify-center gap-2 z-20 border border-white/40">
+                    <i class="fas fa-heart text-white animate-pulse"></i> YES, I WILL MARRY YOU! <i class="fas fa-heart text-white animate-pulse"></i>
+                </button>
+
+                <!-- NO BUTTON (Slippery / Dodging Mobile Touch Enabled) -->
+                <button id="noBtn" class="px-8 py-2.5 bg-white/95 text-gray-700 font-semibold text-sm rounded-xl border border-rose-300 shadow-md transition-all duration-150 z-30 touch-none">
+                    No 💔
+                </button>
+
+            </div>
+        </section>
+
+    </main>
+
+    <!-- CELEBRATION MODAL POPUP -->
+    <div id="celebrationModal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-md flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-500">
+        <div class="bg-white/95 rounded-3xl p-6 max-w-xs sm:max-w-sm w-full text-center shadow-2xl border-4 border-pink-300 transform scale-90 transition-transform duration-500 flex flex-col items-center" id="modalContent">
+            <div class="text-6xl mb-2 animate-bounce">💖</div>
+            <h3 class="font-romantic text-4xl text-rose-600 font-bold mb-1">She Said YES! 💍</h3>
+            <p class="text-xs text-rose-500 font-bold uppercase tracking-wider mb-3">Anshuman ❤️ Rimjhim Forever</p>
+            <p class="text-gray-700 text-xs sm:text-sm mb-5 leading-relaxed bg-pink-50 p-3.5 rounded-2xl border border-pink-100">
+                "I promise to love you, listen to you at 12 AM or anytime, protect you, and cherish you every second of our lives. You are my everything, Rimjhim!" ✨
+            </p>
+            <button onclick="closeModal()" class="w-full py-3 bg-gradient-to-r from-pink-500 to-rose-500 text-white font-bold rounded-xl shadow-lg active:scale-95 transition-transform">
+                Forever & Always ❤️
+            </button>
+        </div>
+    </div>
+
+    <!-- JavaScript Logic -->
+    <script>
+        /* ================= ROMANTIC QUOTES ================= */
+        const romanticQuotes = [
+            "\"Every second with you, Rimjhim, is my absolute favorite memory.\"",
+            "\"You are my today and all of my tomorrows. ~ Anshuman\"",
+            "\"In a room full of art, I would still stare at you forever, Rimjhim.\"",
+            "\"I loved you yesterday, I love you still, I always have, I always will.\"",
+            "\"My heart is and always will be yours, Rimjhim.\"",
+            "\"You are my first and last priority in this lifetime.\""
+        ];
+
+        let quoteIndex = 0;
+        function changeQuote(e) {
+            if(e) e.stopPropagation();
+            const quoteElem = document.getElementById('quoteText');
+            quoteElem.style.opacity = '0';
+            setTimeout(() => {
+                quoteIndex = (quoteIndex + 1) % romanticQuotes.length;
+                quoteElem.innerText = romanticQuotes[quoteIndex];
+                quoteElem.style.opacity = '1';
+            }, 200);
+        }
+
+        /* ================= PHOTO SLIDESHOW & UPLOADER ================= */
+        let uploadedPhotos = [];
+        let photoIndex = 0;
+
+        function renderPhotos() {
+            const photoBg = document.getElementById('photoBg');
+            const frameImg = document.getElementById('frameImage');
+            const defaultGraphic = document.getElementById('defaultCoupleGraphic');
+
+            if (uploadedPhotos.length > 0) {
+                const currentImg = uploadedPhotos[photoIndex];
+                photoBg.style.backgroundImage = `url("${currentImg}")`;
+                
+                if (frameImg) {
+                    frameImg.src = currentImg;
+                    frameImg.classList.remove('hidden');
+                    if(defaultGraphic) defaultGraphic.classList.add('hidden');
+                }
+                photoIndex = (photoIndex + 1) % uploadedPhotos.length;
+            }
+        }
+
+        setInterval(renderPhotos, 4000);
+
+        function handlePhotoUpload(event) {
+            const files = event.target.files;
+            if (files && files.length > 0) {
+                for (let i = 0; i < files.length; i++) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        uploadedPhotos.push(e.target.result);
+                        if (uploadedPhotos.length === 1) {
+                            renderPhotos();
+                        }
+                    };
+                    reader.readAsDataURL(files[i]);
+                }
+            }
+        }
+
+        /* ================= AUDIO & YOUTUBE PLAYER ("Ishq Wala Love") ================= */
+        let ytPlayer;
+        let isAudioPlaying = false;
+        const audioTrack = document.getElementById('audioTrack');
+
+        function triggerInitialMusicOnTap() {
+            if (!isAudioPlaying) {
+                startMusic();
+            }
+        }
+
+        function startMusic() {
+            // Try standard audio player first
+            if (audioTrack) {
+                audioTrack.play().then(() => {
+                    isAudioPlaying = true;
+                    updateMusicUI(true);
+                }).catch(err => {
+                    // Fallback to YouTube Player API
+                    if (ytPlayer && typeof ytPlayer.playVideo === 'function') {
+                        ytPlayer.playVideo();
+                        isAudioPlaying = true;
+                        updateMusicUI(true);
+                    }
+                });
+            }
+        }
+
+        function toggleMusic(e) {
+            if (e) e.stopPropagation();
+            const musicIcon = document.getElementById('musicIcon');
+            const musicBtnText = document.getElementById('musicBtnText');
+
+            if (isAudioPlaying) {
+                if (audioTrack) audioTrack.pause();
+                if (ytPlayer && typeof ytPlayer.pauseVideo === 'function') ytPlayer.pauseVideo();
+                isAudioPlaying = false;
+                updateMusicUI(false);
+            } else {
+                startMusic();
+            }
+        }
+
+        function updateMusicUI(playing) {
+            const musicIcon = document.getElementById('musicIcon');
+            const musicBtnText = document.getElementById('musicBtnText');
+            if (playing) {
+                musicIcon.className = "fas fa-pause text-rose-600 text-sm";
+                musicBtnText.innerText = "Pause";
+            } else {
+                musicIcon.className = "fas fa-music text-rose-500 text-sm";
+                musicBtnText.innerText = "Play Music";
+            }
+        }
+
+        function onYouTubeIframeAPIReady() {
+            ytPlayer = new YT.Player('youtubePlayer', {
+                height: '0',
+                width: '0',
+                videoId: 'qOTiocnriYo', // Ishq Wala Love Video ID
+                playerVars: {
+                    'autoplay': 0,
+                    'controls': 0,
+                    'loop': 1,
+                    'playlist': 'qOTiocnriYo',
+                    'playsinline': 1
+                }
+            });
+        }
+
+        /* ================= PAGE NAVIGATION ================= */
+        function goToPage2() {
+            const page1 = document.getElementById('page1');
+            const page2 = document.getElementById('page2');
+
+            startMusic();
+
+            page1.classList.remove('page-enter');
+            page1.classList.add('page-exit');
+
+            setTimeout(() => {
+                page1.classList.add('hidden');
+                page2.classList.remove('hidden');
+                page2.classList.add('page-enter');
+                initNoButton(); // Enable mobile dodge logic
+            }, 350);
+        }
+
+        /* ================= DODGING "NO" BUTTON LOGIC (ANDROID / MOBILE TOUCH) ================= */
+        const noBtn = document.getElementById('noBtn');
+        const yesBtn = document.getElementById('yesBtn');
+        let escapeCount = 0;
+
+        function moveNoButton(e) {
+            if (e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            escapeCount++;
+
+            if (noBtn.style.position !== 'fixed') {
+                noBtn.style.position = 'fixed';
+                noBtn.style.zIndex = '9999';
+            }
+
+            const btnWidth = noBtn.offsetWidth || 100;
+            const btnHeight = noBtn.offsetHeight || 40;
+
+            const safePadding = 30;
+            const maxX = window.innerWidth - btnWidth - safePadding;
+            const maxY = window.innerHeight - btnHeight - safePadding;
+
+            const randomX = Math.max(safePadding, Math.floor(Math.random() * maxX));
+            const randomY = Math.max(safePadding, Math.floor(Math.random() * maxY));
+
+            noBtn.style.left = `${randomX}px`;
+            noBtn.style.top = `${randomY}px`;
+
+            // Enlarge YES button as NO escapes
+            const scale = 1 + Math.min(escapeCount * 0.08, 0.45);
+            yesBtn.style.transform = `scale(${scale})`;
+
+            const playfulTexts = [
+                "Are you sure, Rimjhim?",
+                "Think again! 😉",
+                "Nice try! 😜",
+                "Wrong button!",
+                "No way! ❤️",
+                "Anshuman loves you!",
+                "Yes is right here! 💕"
+            ];
+            noBtn.innerText = playfulTexts[escapeCount % playfulTexts.length];
+        }
+
+        function initNoButton() {
+            noBtn.addEventListener('touchstart', moveNoButton, { passive: false });
+            noBtn.addEventListener('touchmove', moveNoButton, { passive: false });
+            noBtn.addEventListener('mouseover', moveNoButton);
+            noBtn.addEventListener('click', moveNoButton);
+        }
+
+        /* ================= PROPOSAL ACCEPTANCE ================= */
+        function acceptProposal() {
+            // Heart Confetti Explosion
+            const duration = 5 * 1000;
+            const end = Date.now() + duration;
+
+            (function frame() {
+                confetti({
+                    particleCount: 6,
+                    angle: 60,
+                    spread: 55,
+                    origin: { x: 0 },
+                    colors: ['#ff4d6d', '#ff758f', '#ffb3c1', '#ffffff', '#ffd166']
+                });
+                confetti({
+                    particleCount: 6,
+                    angle: 120,
+                    spread: 55,
+                    origin: { x: 1 },
+                    colors: ['#ff4d6d', '#ff758f', '#ffb3c1', '#ffffff', '#ffd166']
+                });
+
+                if (Date.now() < end) {
+                    requestAnimationFrame(frame);
+                }
+            })();
+
+            // Show Celebration Modal
+            const modal = document.getElementById('celebrationModal');
+            const modalContent = document.getElementById('modalContent');
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            modalContent.classList.remove('scale-90');
+            modalContent.classList.add('scale-100');
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('celebrationModal');
+            modal.classList.add('opacity-0', 'pointer-events-none');
+        }
+
+        /* ================= BACKGROUND CANVAS FLOATING HEARTS ================= */
+        const canvas = document.getElementById('bgCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let width = canvas.width = window.innerWidth;
+        let height = canvas.height = window.innerHeight;
+
+        window.addEventListener('resize', () => {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        });
+
+        class FloatingHeart {
+            constructor() {
+                this.reset();
+            }
+
+            reset() {
+                this.x = Math.random() * width;
+                this.y = height + Math.random() * 40;
+                this.size = Math.random() * 14 + 6;
+                this.speedY = Math.random() * 1.2 + 0.6;
+                this.speedX = Math.sin(Math.random() * Math.PI) * 0.6;
+                this.opacity = Math.random() * 0.6 + 0.35;
+                this.rotation = Math.random() * 360;
+                this.rotationSpeed = (Math.random() - 0.5) * 1.5;
+                this.color = `hsla(${Math.random() * 25 + 335}, 100%, 75%, ${this.opacity})`;
+            }
+
+            update() {
+                this.y -= this.speedY;
+                this.x += Math.sin(this.y * 0.01) * 0.4;
+                this.rotation += this.rotationSpeed;
+
+                if (this.y < -30) {
+                    this.reset();
+                }
+            }
+
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate((this.rotation * Math.PI) / 180);
+                ctx.fillStyle = this.color;
+                
+                ctx.beginPath();
+                const topCurveHeight = this.size * 0.3;
+                ctx.moveTo(0, topCurveHeight);
+                ctx.bezierCurveTo(-this.size / 2, -topCurveHeight, -this.size, this.size / 3, 0, this.size);
+                ctx.bezierCurveTo(this.size, this.size / 3, this.size / 2, -topCurveHeight, 0, topCurveHeight);
+                ctx.closePath();
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        const heartsArray = Array.from({ length: 32 }, () => new FloatingHeart());
+
+        function animateCanvas() {
+            ctx.clearRect(0, 0, width, height);
+            heartsArray.forEach(heart => {
+                heart.update();
+                heart.draw();
+            });
+            requestAnimationFrame(animateCanvas);
+        }
+
+        window.onload = function() {
+            animateCanvas();
+        };
+    </script>
+</body>
+</html>
